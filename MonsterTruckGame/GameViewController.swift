@@ -22,5 +22,5 @@ class GameViewController: UIViewController {
         skView.presentScene(menuScene)
     }
 
-    override var prefersStatusBarHidden: Bool { true }
+    // Note: tvOS doesn't have a status bar, so prefersStatusBarHidden is not needed
 }

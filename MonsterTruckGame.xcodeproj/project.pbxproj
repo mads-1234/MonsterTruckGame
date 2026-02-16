@@ -7,17 +7,25 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001; };
-		A1000002 /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002; };
-		A1000003 /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003; };
-		A1000004 /* MenuScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004; };
-		A1000005 /* TrickSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005; };
-		A1000006 /* ControllerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006; };
-		A1000007 /* LevelGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007; };
-		A1000008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000008; };
+		120A6F2A2F43BC8E00C50582 /* horn_sound.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 120A6F292F43BC8E00C50582 /* horn_sound.mp3 */; };
+		120A6F2B2F43BC8E00C50582 /* engine_sound.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 120A6F282F43BC8E00C50582 /* engine_sound.mp3 */; };
+		120A6F2C2F43BC8E00C50582 /* crash_sound.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 120A6F272F43BC8E00C50582 /* crash_sound.mp3 */; };
+		120A6F2D2F43BC8E00C50582 /* background_music.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 120A6F262F43BC8E00C50582 /* background_music.mp3 */; };
+		A1000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001 /* AppDelegate.swift */; };
+		A1000002 /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* GameViewController.swift */; };
+		A1000003 /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003 /* GameScene.swift */; };
+		A1000004 /* MenuScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004 /* MenuScene.swift */; };
+		A1000005 /* TrickSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005 /* TrickSystem.swift */; };
+		A1000006 /* ControllerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006 /* ControllerManager.swift */; };
+		A1000007 /* LevelGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007 /* LevelGenerator.swift */; };
+		A1000008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000008 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		120A6F262F43BC8E00C50582 /* background_music.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = background_music.mp3; sourceTree = "<group>"; };
+		120A6F272F43BC8E00C50582 /* crash_sound.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = crash_sound.mp3; sourceTree = "<group>"; };
+		120A6F282F43BC8E00C50582 /* engine_sound.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = engine_sound.mp3; sourceTree = "<group>"; };
+		120A6F292F43BC8E00C50582 /* horn_sound.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = horn_sound.mp3; sourceTree = "<group>"; };
 		A2000001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A2000002 /* GameViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameViewController.swift; sourceTree = "<group>"; };
 		A2000003 /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
@@ -52,6 +60,10 @@
 		A4000002 /* MonsterTruckGame */ = {
 			isa = PBXGroup;
 			children = (
+				120A6F262F43BC8E00C50582 /* background_music.mp3 */,
+				120A6F272F43BC8E00C50582 /* crash_sound.mp3 */,
+				120A6F282F43BC8E00C50582 /* engine_sound.mp3 */,
+				120A6F292F43BC8E00C50582 /* horn_sound.mp3 */,
 				A2000001 /* AppDelegate.swift */,
 				A2000002 /* GameViewController.swift */,
 				A2000003 /* GameScene.swift */,
@@ -127,6 +139,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1000008 /* Assets.xcassets in Resources */,
+				120A6F2A2F43BC8E00C50582 /* horn_sound.mp3 in Resources */,
+				120A6F2B2F43BC8E00C50582 /* engine_sound.mp3 in Resources */,
+				120A6F2C2F43BC8E00C50582 /* crash_sound.mp3 in Resources */,
+				120A6F2D2F43BC8E00C50582 /* background_music.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -200,6 +216,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = VL7V9QNTJW;
 				INFOPLIST_FILE = MonsterTruckGame/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -217,6 +234,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = VL7V9QNTJW;
 				INFOPLIST_FILE = MonsterTruckGame/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -251,7 +269,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = A8000001 /* Project object */;
 }

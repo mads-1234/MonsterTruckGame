@@ -35,26 +35,42 @@ class LevelGenerator {
         let roll = Int.random(in: 0...10)
 
         switch roll {
-        case 0...4:
-            return [makeFlat(width: CGFloat.random(in: 200...500))]
-        case 5...7:
-            return [makeRamp(height: CGFloat.random(in: 80...200), width: CGFloat.random(in: 150...300))]
-        case 8...9:
+        case 0...5:
+            // Flat terrain (more common now)
+            return [makeFlat(width: CGFloat.random(in: 300...600))]
+        case 6...8:
+            // Regular ramps (good for speed and tricks)
+            return [makeRamp(height: CGFloat.random(in: 80...200), width: CGFloat.random(in: 200...400))]
+        case 9...10:
+            // Big jumps (with ramps on both sides - no random holes!)
             return [makeBigJump()]
         default:
-            return [makeGap(width: CGFloat.random(in: 100...250))]
+            // No more random gaps! Only jumps with ramps
+            return [makeFlat(width: 400)]
         }
     }
 
     private func makeFlat(width: CGFloat) -> SKNode {
-        let node = SKSpriteNode(color: .brown, size: CGSize(width: width, height: 60))
+        let container = SKNode()
+
+        // Main dirt ground
+        let node = SKSpriteNode(color: SKColor(red: 0.55, green: 0.35, blue: 0.2, alpha: 1.0),
+                                size: CGSize(width: width, height: 60))
         node.position = CGPoint(x: nextX + width / 2, y: groundY)
         node.physicsBody = SKPhysicsBody(rectangleOf: node.size)
         node.physicsBody?.isDynamic = false
         node.physicsBody?.categoryBitMask = PhysicsCategory.ground
-        node.physicsBody?.friction = 0.8
+        node.physicsBody?.friction = 2.0
+
+        // Grass on top for detail
+        let grass = SKSpriteNode(color: SKColor(red: 0.2, green: 0.6, blue: 0.2, alpha: 1.0),
+                                 size: CGSize(width: width, height: 12))
+        grass.position = CGPoint(x: 0, y: 24)
+        node.addChild(grass)
+
+        container.addChild(node)
         nextX += width
-        return node
+        return container
     }
 
     private func makeRamp(height: CGFloat, width: CGFloat) -> SKNode {
@@ -69,14 +85,14 @@ class LevelGenerator {
         path.closeSubpath()
 
         let ramp = SKShapeNode(path: path)
-        ramp.fillColor = .orange
-        ramp.strokeColor = .darkGray
-        ramp.lineWidth = 2
+        ramp.fillColor = SKColor(red: 0.8, green: 0.5, blue: 0.1, alpha: 1.0)  // Brown-orange ramp
+        ramp.strokeColor = SKColor(red: 0.3, green: 0.2, blue: 0.1, alpha: 1.0)
+        ramp.lineWidth = 3
 
         ramp.physicsBody = SKPhysicsBody(polygonFrom: path)
         ramp.physicsBody?.isDynamic = false
         ramp.physicsBody?.categoryBitMask = PhysicsCategory.ground
-        ramp.physicsBody?.friction = 0.6
+        ramp.physicsBody?.friction = 2.0  // Much more grip on ramps!
 
         container.addChild(ramp)
         nextX += width
@@ -99,13 +115,13 @@ class LevelGenerator {
         upPath.closeSubpath()
 
         let upRamp = SKShapeNode(path: upPath)
-        upRamp.fillColor = .red
-        upRamp.strokeColor = .darkGray
-        upRamp.lineWidth = 2
+        upRamp.fillColor = SKColor(red: 0.9, green: 0.2, blue: 0.1, alpha: 1.0)  // Bright red jump!
+        upRamp.strokeColor = SKColor(red: 0.5, green: 0.1, blue: 0.0, alpha: 1.0)
+        upRamp.lineWidth = 3
         upRamp.physicsBody = SKPhysicsBody(polygonFrom: upPath)
         upRamp.physicsBody?.isDynamic = false
         upRamp.physicsBody?.categoryBitMask = PhysicsCategory.ground
-        upRamp.physicsBody?.friction = 0.5
+        upRamp.physicsBody?.friction = 2.0  // High grip for jump ramps!
 
         container.addChild(upRamp)
 
@@ -120,13 +136,13 @@ class LevelGenerator {
         downPath.closeSubpath()
 
         let downRamp = SKShapeNode(path: downPath)
-        downRamp.fillColor = .red
-        downRamp.strokeColor = .darkGray
-        downRamp.lineWidth = 2
+        downRamp.fillColor = SKColor(red: 0.9, green: 0.2, blue: 0.1, alpha: 1.0)  // Bright red landing!
+        downRamp.strokeColor = SKColor(red: 0.5, green: 0.1, blue: 0.0, alpha: 1.0)
+        downRamp.lineWidth = 3
         downRamp.physicsBody = SKPhysicsBody(polygonFrom: downPath)
         downRamp.physicsBody?.isDynamic = false
         downRamp.physicsBody?.categoryBitMask = PhysicsCategory.ground
-        downRamp.physicsBody?.friction = 0.6
+        downRamp.physicsBody?.friction = 2.0  // High grip for landings!
 
         container.addChild(downRamp)
 
@@ -147,7 +163,7 @@ class LevelGenerator {
         landing.physicsBody = SKPhysicsBody(rectangleOf: landing.size)
         landing.physicsBody?.isDynamic = false
         landing.physicsBody?.categoryBitMask = PhysicsCategory.ground
-        landing.physicsBody?.friction = 0.8
+        landing.physicsBody?.friction = 2.0  // High grip!
 
         let container = SKNode()
         container.addChild(marker)

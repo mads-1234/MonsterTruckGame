@@ -56,6 +56,15 @@ class ControllerManager {
     private func setupController(_ gc: GCController) {
         controller = gc
 
+        // Log controller type
+        let productCategory = gc.productCategory
+        print("🎮 Controller connected: \(productCategory)")
+        if productCategory.contains("Xbox") {
+            print("   Xbox controller detected")
+        } else if productCategory.contains("DualShock") || productCategory.contains("DualSense") {
+            print("   PlayStation controller detected")
+        }
+
         guard let gamepad = gc.extendedGamepad else { return }
 
         // R2 = accelerate

@@ -11,9 +11,24 @@ class LevelGenerator {
     private let groundY: CGFloat
     private var nextX: CGFloat = 0
 
+    // Cached textures for pixel art
+    private let dirtTexture: SKTexture
+    private let grassTexture: SKTexture
+    private let rampTexture: SKTexture
+    private let rampBigTexture: SKTexture
+
     init(sceneSize: CGSize, groundY: CGFloat) {
         self.sceneSize = sceneSize
         self.groundY = groundY
+
+        dirtTexture = SKTexture(imageNamed: "ground_dirt")
+        dirtTexture.filteringMode = .nearest
+        grassTexture = SKTexture(imageNamed: "ground_grass")
+        grassTexture.filteringMode = .nearest
+        rampTexture = SKTexture(imageNamed: "ramp_surface")
+        rampTexture.filteringMode = .nearest
+        rampBigTexture = SKTexture(imageNamed: "ramp_big")
+        rampBigTexture.filteringMode = .nearest
     }
 
     func generateInitialTerrain() -> [SKNode] {
@@ -32,144 +47,191 @@ class LevelGenerator {
     }
 
     func generateNextSegment() -> [SKNode] {
-        let roll = Int.random(in: 0...10)
+        let roll = Int.random(in: 0...20)
 
         switch roll {
-        case 0...5:
-            // Flat terrain (more common now)
+        case 0...12:
+            // Flat terrain (65%)
             return [makeFlat(width: CGFloat.random(in: 300...600))]
-        case 6...8:
-            // Regular ramps (good for speed and tricks)
-            return [makeRamp(height: CGFloat.random(in: 80...200), width: CGFloat.random(in: 200...400))]
-        case 9...10:
-            // Big jumps (with ramps on both sides - no random holes!)
-            return [makeBigJump()]
+        case 13...15:
+            // Small ramps (15%)
+            return [makeRamp(height: CGFloat.random(in: 60...150), width: CGFloat.random(in: 250...400))]
+        case 16...18:
+            // Hill (up + flat top + down) (15%)
+            return [makeHill()]
+        case 19...20:
+            // Big hill (10%)
+            return [makeBigHill()]
         default:
-            // No more random gaps! Only jumps with ramps
             return [makeFlat(width: 400)]
         }
     }
 
     private func makeFlat(width: CGFloat) -> SKNode {
         let container = SKNode()
+        let tileSize: CGFloat = 64
 
-        // Main dirt ground
-        let node = SKSpriteNode(color: SKColor(red: 0.55, green: 0.35, blue: 0.2, alpha: 1.0),
-                                size: CGSize(width: width, height: 60))
-        node.position = CGPoint(x: nextX + width / 2, y: groundY)
-        node.physicsBody = SKPhysicsBody(rectangleOf: node.size)
-        node.physicsBody?.isDynamic = false
-        node.physicsBody?.categoryBitMask = PhysicsCategory.ground
-        node.physicsBody?.friction = 2.0
+        // Invisible physics body spanning the full width
+        let physicsNode = SKNode()
+        physicsNode.position = CGPoint(x: nextX + width / 2, y: groundY)
+        physicsNode.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: width, height: 60))
+        physicsNode.physicsBody?.isDynamic = false
+        physicsNode.physicsBody?.categoryBitMask = PhysicsCategory.ground
+        physicsNode.physicsBody?.friction = 2.0
+        container.addChild(physicsNode)
 
-        // Grass on top for detail
-        let grass = SKSpriteNode(color: SKColor(red: 0.2, green: 0.6, blue: 0.2, alpha: 1.0),
-                                 size: CGSize(width: width, height: 12))
-        grass.position = CGPoint(x: 0, y: 24)
-        node.addChild(grass)
+        // Tiled sprites
+        let tilesNeeded = Int(ceil(width / tileSize))
+        for i in 0..<tilesNeeded {
+            let tileX = nextX + CGFloat(i) * tileSize + tileSize / 2
 
-        container.addChild(node)
+            // Grass tile (top)
+            let grass = SKSpriteNode(texture: grassTexture, size: CGSize(width: tileSize + 1, height: tileSize))
+            grass.position = CGPoint(x: tileX, y: groundY + 16)
+            grass.zPosition = -1
+            container.addChild(grass)
+
+            // Dirt tiles filling downward
+            for row in 0..<4 {
+                let dirt = SKSpriteNode(texture: dirtTexture, size: CGSize(width: tileSize + 1, height: tileSize))
+                dirt.position = CGPoint(x: tileX, y: groundY - 16 - CGFloat(row) * tileSize)
+                dirt.zPosition = -1
+                container.addChild(dirt)
+            }
+        }
+
         nextX += width
         return container
     }
 
+    /// Simple straight ramp — triangle going up to the right, then flat connects after
     private func makeRamp(height: CGFloat, width: CGFloat) -> SKNode {
         let container = SKNode()
         container.position = CGPoint(x: nextX, y: groundY)
 
-        // Ramp surface using a triangle path
+        // Straight ramp path with generous overlap
         let path = CGMutablePath()
-        path.move(to: CGPoint(x: 0, y: -30))
+        path.move(to: CGPoint(x: -6, y: -40))
+        path.addLine(to: CGPoint(x: -6, y: 0))
         path.addLine(to: CGPoint(x: width, y: height))
-        path.addLine(to: CGPoint(x: width, y: -30))
+        path.addLine(to: CGPoint(x: width + 6, y: height))
+        path.addLine(to: CGPoint(x: width + 6, y: -40))
         path.closeSubpath()
 
         let ramp = SKShapeNode(path: path)
-        ramp.fillColor = SKColor(red: 0.8, green: 0.5, blue: 0.1, alpha: 1.0)  // Brown-orange ramp
-        ramp.strokeColor = SKColor(red: 0.3, green: 0.2, blue: 0.1, alpha: 1.0)
-        ramp.lineWidth = 3
+        ramp.fillColor = .white
+        ramp.fillTexture = rampTexture
+        ramp.strokeColor = .clear  // No outline
+        ramp.lineWidth = 0
 
         ramp.physicsBody = SKPhysicsBody(polygonFrom: path)
         ramp.physicsBody?.isDynamic = false
         ramp.physicsBody?.categoryBitMask = PhysicsCategory.ground
-        ramp.physicsBody?.friction = 2.0  // Much more grip on ramps!
+        ramp.physicsBody?.friction = 2.0
 
         container.addChild(ramp)
+
+        // Underground fill
+        addUndergroundFill(to: container, startX: -6, width: width + 12)
+
         nextX += width
 
         return container
     }
 
-    private func makeBigJump() -> SKNode {
+    /// Hill: up-ramp → flat top → down-ramp, NO gap, continuous ground
+    private func makeHill() -> SKNode {
         let container = SKNode()
         container.position = CGPoint(x: nextX, y: groundY)
 
-        // Up-ramp
         let rampWidth: CGFloat = 200
-        let rampHeight: CGFloat = 250
+        let topWidth: CGFloat = 150
+        let hillHeight: CGFloat = CGFloat.random(in: 120...200)
+        let totalWidth = rampWidth + topWidth + rampWidth
 
-        let upPath = CGMutablePath()
-        upPath.move(to: CGPoint(x: 0, y: -30))
-        upPath.addLine(to: CGPoint(x: rampWidth, y: rampHeight))
-        upPath.addLine(to: CGPoint(x: rampWidth, y: -30))
-        upPath.closeSubpath()
+        // Single polygon: up-slope, flat top, down-slope, filled bottom
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: -6, y: -40))
+        path.addLine(to: CGPoint(x: -6, y: 0))
+        path.addLine(to: CGPoint(x: rampWidth, y: hillHeight))
+        path.addLine(to: CGPoint(x: rampWidth + topWidth, y: hillHeight))
+        path.addLine(to: CGPoint(x: totalWidth + 6, y: 0))
+        path.addLine(to: CGPoint(x: totalWidth + 6, y: -40))
+        path.closeSubpath()
 
-        let upRamp = SKShapeNode(path: upPath)
-        upRamp.fillColor = SKColor(red: 0.9, green: 0.2, blue: 0.1, alpha: 1.0)  // Bright red jump!
-        upRamp.strokeColor = SKColor(red: 0.5, green: 0.1, blue: 0.0, alpha: 1.0)
-        upRamp.lineWidth = 3
-        upRamp.physicsBody = SKPhysicsBody(polygonFrom: upPath)
-        upRamp.physicsBody?.isDynamic = false
-        upRamp.physicsBody?.categoryBitMask = PhysicsCategory.ground
-        upRamp.physicsBody?.friction = 2.0  // High grip for jump ramps!
+        let hill = SKShapeNode(path: path)
+        hill.fillColor = .white
+        hill.fillTexture = rampTexture
+        hill.strokeColor = .clear
+        hill.lineWidth = 0
 
-        container.addChild(upRamp)
+        hill.physicsBody = SKPhysicsBody(polygonFrom: path)
+        hill.physicsBody?.isDynamic = false
+        hill.physicsBody?.categoryBitMask = PhysicsCategory.ground
+        hill.physicsBody?.friction = 2.0
 
-        // Gap
-        let gapWidth: CGFloat = 400
+        container.addChild(hill)
 
-        // Down-ramp / landing
-        let downPath = CGMutablePath()
-        downPath.move(to: CGPoint(x: rampWidth + gapWidth, y: rampHeight * 0.5))
-        downPath.addLine(to: CGPoint(x: rampWidth + gapWidth + rampWidth, y: -30))
-        downPath.addLine(to: CGPoint(x: rampWidth + gapWidth, y: -30))
-        downPath.closeSubpath()
+        // Underground fill across entire hill
+        addUndergroundFill(to: container, startX: 0, width: totalWidth)
 
-        let downRamp = SKShapeNode(path: downPath)
-        downRamp.fillColor = SKColor(red: 0.9, green: 0.2, blue: 0.1, alpha: 1.0)  // Bright red landing!
-        downRamp.strokeColor = SKColor(red: 0.5, green: 0.1, blue: 0.0, alpha: 1.0)
-        downRamp.lineWidth = 3
-        downRamp.physicsBody = SKPhysicsBody(polygonFrom: downPath)
-        downRamp.physicsBody?.isDynamic = false
-        downRamp.physicsBody?.categoryBitMask = PhysicsCategory.ground
-        downRamp.physicsBody?.friction = 2.0  // High grip for landings!
-
-        container.addChild(downRamp)
-
-        nextX += rampWidth * 2 + gapWidth
+        nextX += totalWidth
 
         return container
     }
 
-    private func makeGap(width: CGFloat) -> SKNode {
-        // Just advance the x position - no ground here
-        let marker = SKNode()
-        marker.position = CGPoint(x: nextX + width / 2, y: groundY - 200)
-        nextX += width
-
-        // Add a landing platform after gap
-        let landing = SKSpriteNode(color: .brown, size: CGSize(width: 300, height: 60))
-        landing.position = CGPoint(x: nextX + 150, y: groundY)
-        landing.physicsBody = SKPhysicsBody(rectangleOf: landing.size)
-        landing.physicsBody?.isDynamic = false
-        landing.physicsBody?.categoryBitMask = PhysicsCategory.ground
-        landing.physicsBody?.friction = 2.0  // High grip!
-
+    /// Big hill: steeper, taller, red texture — great for big air tricks
+    private func makeBigHill() -> SKNode {
         let container = SKNode()
-        container.addChild(marker)
-        container.addChild(landing)
-        nextX += 300
+        container.position = CGPoint(x: nextX, y: groundY)
+
+        let rampWidth: CGFloat = 250
+        let topWidth: CGFloat = 80
+        let hillHeight: CGFloat = CGFloat.random(in: 220...320)
+        let totalWidth = rampWidth + topWidth + rampWidth
+
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: -6, y: -40))
+        path.addLine(to: CGPoint(x: -6, y: 0))
+        path.addLine(to: CGPoint(x: rampWidth, y: hillHeight))
+        path.addLine(to: CGPoint(x: rampWidth + topWidth, y: hillHeight))
+        path.addLine(to: CGPoint(x: totalWidth + 6, y: 0))
+        path.addLine(to: CGPoint(x: totalWidth + 6, y: -40))
+        path.closeSubpath()
+
+        let hill = SKShapeNode(path: path)
+        hill.fillColor = .white
+        hill.fillTexture = rampBigTexture
+        hill.strokeColor = .clear
+        hill.lineWidth = 0
+
+        hill.physicsBody = SKPhysicsBody(polygonFrom: path)
+        hill.physicsBody?.isDynamic = false
+        hill.physicsBody?.categoryBitMask = PhysicsCategory.ground
+        hill.physicsBody?.friction = 2.0
+
+        container.addChild(hill)
+
+        // Underground fill
+        addUndergroundFill(to: container, startX: 0, width: totalWidth)
+
+        nextX += totalWidth
 
         return container
+    }
+
+    /// Adds dirt tile fill below terrain segments
+    private func addUndergroundFill(to container: SKNode, startX: CGFloat, width: CGFloat) {
+        let tileSize: CGFloat = 64
+        let tilesNeeded = Int(ceil(width / tileSize))
+        for i in 0..<tilesNeeded {
+            let tileX = startX + CGFloat(i) * tileSize + tileSize / 2
+            for row in 0..<4 {
+                let dirt = SKSpriteNode(texture: dirtTexture, size: CGSize(width: tileSize + 1, height: tileSize))
+                dirt.position = CGPoint(x: tileX, y: -40 - CGFloat(row) * tileSize)
+                dirt.zPosition = -2
+                container.addChild(dirt)
+            }
+        }
     }
 }

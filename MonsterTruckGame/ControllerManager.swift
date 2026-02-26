@@ -82,14 +82,14 @@ class ControllerManager {
             if pressed { self?.delegate?.didPressJump() }
         }
 
-        // Circle button (buttonB on Apple) = restart
+        // Circle / B button = pause
         gamepad.buttonB.pressedChangedHandler = { [weak self] _, _, pressed in
-            if pressed { self?.delegate?.didPressRestart() }
+            if pressed { self?.delegate?.didPressPause() }
         }
 
-        // Triangle button (buttonY on Apple) = pause
+        // Triangle / Y button = restart
         gamepad.buttonY.pressedChangedHandler = { [weak self] _, _, pressed in
-            if pressed { self?.delegate?.didPressPause() }
+            if pressed { self?.delegate?.didPressRestart() }
         }
 
         // Left stick / D-pad = lean

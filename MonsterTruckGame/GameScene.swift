@@ -1,14 +1,39 @@
 import SpriteKit
 import AVFoundation
 
+/// Bit masks for SpriteKit physics categories.
+///
+/// Used for `categoryBitMask`, `contactTestBitMask`, og `collisionBitMask`
+/// på alle fysikk-kropper i spillet. Hver kategori er én bit slik at de
+/// kan kombineres med OR (`|`).
+///
+/// Kollisjonsmatrise:
+/// - `truck` og `wheel` kolliderer med `ground` (kjører på terrenget).
+/// - `truck` og `wheel` *kontakter* `boundary` (death zone) — utløser krasj
+///   via `SKPhysicsContactDelegate`, men kolliderer ikke fysisk.
+/// - `truck` og `wheel` kolliderer ikke med hverandre — de er koblet med
+///   spring joints og skal ikke "dytte" hverandre.
 struct PhysicsCategory {
     static let none: UInt32     = 0
+    /// Truck-karosseriet. Én kropp, koblet til hjul via spring joints.
     static let truck: UInt32    = 0b1
+    /// Front- og bakhjul. Sirkulære kropper med friksjon — driver fremover
+    /// ved å sette `angularVelocity` direkte (ikke moment).
     static let wheel: UInt32    = 0b10
+    /// Alt terreng: flate biter, ramper, høyder. Statisk (`isDynamic = false`).
     static let ground: UInt32   = 0b100
+    /// Death zone under terrenget (y = -200). Kontakt med truck/hjul
+    /// utløser umiddelbar krasj.
     static let boundary: UInt32 = 0b1000
 }
 
+/// Hovedscene for kjøringen — eier truck-fysikk, kamera, parallax, HUD,
+/// audio, og terreng-generator.
+///
+/// Levetid: opprettes av `MenuScene.startGame()` ved trykk på X, og
+/// erstattes av en ny `GameScene`-instans ved restart (vi reseter ikke
+/// state — vi bytter scene). Krasj-tilstand håndteres via `isCrashed`,
+/// som stopper alt arbeid i `update(_:)` til spilleren trykker Y.
 class GameScene: SKScene {
 
     // MARK: - Properties
@@ -49,6 +74,13 @@ class GameScene: SKScene {
     private var lastHornTime: TimeInterval = 0
 
     // MARK: - Scene Setup
+
+    /// Bootstrapper hele scenen: bakgrunn, terreng, truck, HUD, audio,
+    /// og kobler controller-delegate. Kalt automatisk av SpriteKit når
+    /// scenen presenteres i en `SKView`.
+    ///
+    /// Setter `physicsWorld.contactDelegate = self` slik at death zone-
+    /// kollisjoner trigger `didBegin(_:)` i extension under.
     override func didMove(to view: SKView) {
         // Deep retro blue sky
         backgroundColor = SKColor(red: 0.18, green: 0.32, blue: 0.72, alpha: 1.0)
@@ -292,6 +324,15 @@ class GameScene: SKScene {
     }
 
     // MARK: - Game Loop
+
+    /// Per-frame oppdatering kalt av SpriteKit (~60 Hz).
+    ///
+    /// Rekkefølgen er bevisst: input/driving før luft-kontroll og kamera,
+    /// så parallax (som leser kamera-posisjonen), så terreng-spawn til slutt
+    /// så den nye terrengen ikke forskyves av samme frames kamerabevegelse.
+    ///
+    /// Hele kroppen short-circuiter når `isCrashed` er sann — scenen står
+    /// stille og venter på restart.
     override func update(_ currentTime: TimeInterval) {
         guard !isCrashed else { return }
 
@@ -399,6 +440,14 @@ class GameScene: SKScene {
         }
     }
 
+    /// Detekterer om trucken er i lufta basert på hjul-kontakter.
+    ///
+    /// Vi spør hjulenes fysikk-kropper hvor mange andre kropper de er i
+    /// kontakt med. Null kontakter = i lufta. Dette er mer pålitelig enn
+    /// å bruke `SKPhysicsContactDelegate`, fordi vi ikke trenger å spore
+    /// begin/end events selv.
+    ///
+    /// Overganger trigger `TrickSystem.startAirborne()` / `handleLanding()`.
     private func updateAirborneState() {
         let wheelContacts = (frontWheel.physicsBody?.allContactedBodies().count ?? 0) +
                            (rearWheel.physicsBody?.allContactedBodies().count ?? 0)
@@ -412,6 +461,12 @@ class GameScene: SKScene {
         }
     }
 
+    /// Akkumulerer rotasjon mens trucken er i lufta — brukes til salto-deteksjon.
+    ///
+    /// `zRotation` er kontinuerlig (kan bli > 2π), men frame-til-frame-delta
+    /// kan hoppe over wraparound. Vi normaliserer derfor delta til [-π, π]
+    /// før vi sender det til `TrickSystem.addRotation`, slik at en passering
+    /// av ±π ikke registreres som en hel runde med motsatt fortegn.
     private func trackRotation() {
         guard isAirborne else {
             lastRotation = truckBody.zRotation
@@ -433,6 +488,13 @@ class GameScene: SKScene {
         trickSystem.updateHeight(heightAboveGround)
     }
 
+    /// Avgjør om landingen er trygg eller en krasj, og rapporterer triks.
+    ///
+    /// Vi normaliserer `zRotation` til intervallet [0, π] — vi bryr oss
+    /// kun om hvor mye trucken vipper, ikke hvilken vei. Terskelen π/1.8
+    /// (~100°) er bevisst slack: spilleren skal kunne lande litt skjevt
+    /// og fortsatt overleve. Strengere terskler (π/2 og strengere) føltes
+    /// frustrerende i testing — se `PROGRESS.md` for tuning-historikk.
     private func handleLanding() {
         let angle = abs(truckBody.zRotation.truncatingRemainder(dividingBy: .pi * 2))
         let normalizedAngle = min(angle, .pi * 2 - angle)
@@ -564,6 +626,11 @@ class GameScene: SKScene {
         crashOverlay = overlay
     }
 
+    /// Starter en helt ny `GameScene` framfor å nullstille tilstand.
+    ///
+    /// Enklere og mer pålitelig enn manuell reset: alle physics bodies,
+    /// timers og noder forsvinner med den gamle scenen. SpriteKit holder
+    /// `SKView` i live mellom transisjoner.
     private func restartGame() {
         crashOverlay?.removeFromParent()
         crashOverlay = nil

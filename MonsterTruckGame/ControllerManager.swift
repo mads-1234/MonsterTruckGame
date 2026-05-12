@@ -1,16 +1,39 @@
 import GameController
 
+/// Mottar input-events fra `ControllerManager` etter at de er normalisert
+/// på tvers av PlayStation og Xbox-kontrollere.
+///
+/// Trigger-verdier (`didPressAccelerate`, `didPressBrake`) er kontinuerlige
+/// i [0, 1]. Lean (`didLean`) er kontinuerlig i [-1, 1] hvor negativ er
+/// bakover. Knapper rapporterer kun pressed-edge (ikke release).
 protocol ControllerManagerDelegate: AnyObject {
+    /// Kalt når en kontroller blir tilkoblet etter scene-oppstart.
     func controllerDidConnect()
+    /// Kalt når kontrolleren mister forbindelsen (utgått batteri, Bluetooth osv.).
     func controllerDidDisconnect()
+    /// R2 / RT. `value` ∈ [0, 1] — analog gass.
     func didPressAccelerate(_ value: Float)
+    /// L2 / LT. `value` ∈ [0, 1] — analog brems.
     func didPressBrake(_ value: Float)
+    /// X (PS) / A (Xbox). I `GameScene` brukt som hopp; i `MenuScene` som start.
     func didPressJump()
+    /// Triangle (PS) / Y (Xbox). Alltid en restart, også uten krasj.
     func didPressRestart()
+    /// O (PS) / B (Xbox). Toggler `isPaused`.
     func didPressPause()
-    func didLean(_ value: Float) // -1 = back, 1 = forward
+    /// Venstre stick eller D-pad x-akse. `value` ∈ [-1, 1] (negativ = bakover).
+    func didLean(_ value: Float)
 }
 
+/// Tynt lag over `GameController.framework` som normaliserer
+/// PlayStation- og Xbox-kontroller-events til `ControllerManagerDelegate`.
+///
+/// Apple's `GCExtendedGamepad` mapper begge typer kontroller til samme
+/// abstrakte buttonA/B/Y, så X på PS = A på Xbox osv. Vi videreformidler
+/// kun de inputs spillet bryr seg om (gass, brems, hopp, restart, pause, lean).
+///
+/// Én instans per scene — `MenuScene` og `GameScene` lager hver sin og
+/// kobler seg som delegate.
 class ControllerManager {
 
     weak var delegate: ControllerManagerDelegate?

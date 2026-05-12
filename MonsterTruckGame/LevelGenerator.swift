@@ -5,6 +5,21 @@ struct TerrainSegment {
     let width: CGFloat
 }
 
+/// Prosedyral terreng-spawner. Holder x-cursor (`nextX`) og legger til
+/// nye segmenter etter hvert som kameraet beveger seg framover.
+///
+/// Segment-typer:
+/// - Flat (65 %): tiled grass+dirt, ren rektangulær fysikk-kropp.
+/// - Ramper (15 %): trekant-polygon, gir hopp.
+/// - Høyder (15 %): opp-flatt-ned med ett polygon (ingen gap).
+/// - Store høyder (10 %): som høyde men brattere, rød tekstur, gir store
+///   svevetur-hopp.
+///
+/// Hvert segment har et eget underground-fyll (4 rader med dirt) slik at
+/// terrenget ser massivt ut uavhengig av kameravinkel — se `addUndergroundFill`.
+///
+/// Eies av `GameScene`. Ikke gjenbrukbar mellom scener fordi `nextX`
+/// holder posisjon.
 class LevelGenerator {
 
     private let sceneSize: CGSize
@@ -31,6 +46,9 @@ class LevelGenerator {
         rampBigTexture.filteringMode = .nearest
     }
 
+    /// Bygger startbanen: 800 px flat innledning + 20 tilfeldige segmenter.
+    /// Den flate innledningen gir spilleren tid til å akselerere før første
+    /// ramp/høyde. Kalles én gang fra `GameScene.didMove(to:)`.
     func generateInitialTerrain() -> [SKNode] {
         nextX = 0
         var nodes: [SKNode] = []
@@ -46,6 +64,13 @@ class LevelGenerator {
         return nodes
     }
 
+    /// Spawner ett nytt segment til høyre for forrige. Returnerer en liste
+    /// fordi noen segmenter potensielt kan bestå av flere noder (per i dag
+    /// alltid én, men API-et er åpent for utvidelser).
+    ///
+    /// Kalles ofte fra `GameScene.update(_:)` — vekter er bevisst skewed
+    /// mot flatt terreng (65 %) for å holde kjøringen flytende og ikke
+    /// drukne spilleren i hopp.
     func generateNextSegment() -> [SKNode] {
         let roll = Int.random(in: 0...20)
 

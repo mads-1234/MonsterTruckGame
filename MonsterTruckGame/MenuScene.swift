@@ -2,6 +2,13 @@ import SpriteKit
 import GameController
 import AVFoundation
 
+/// Hovedmeny-scene. Viser tittel-bakgrunn, animert Konrad-sprite,
+/// "Trykk X for å kjøre!"-prompt med pulsende fade, kontroller-hint,
+/// og spiller bakgrunnsmusikk.
+///
+/// Trykk på X / A starter `GameScene` via en fade-transition.
+/// Musikken stoppes ved scene-bytte (egne `AVAudioPlayer`-instanser per
+/// scene gjenbrukes ikke).
 class MenuScene: SKScene {
 
     private var controllerManager = ControllerManager()
